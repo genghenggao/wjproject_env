@@ -11,6 +11,7 @@ lib/
 lib64/
 logs/
 media/
+static/
 tem_data/
 # 忽略Vue项目，这个我在windows下写了
 wjproject_ui/

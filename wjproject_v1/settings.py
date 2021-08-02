@@ -195,7 +195,8 @@ STATIC_URL = '/static/'
 #     os.path.join(BASE_DIR, "wjproject_ui/dist/static"),
 # ]
 # 设置收集静态资源的路径(部署时使用)
-STATIC_ROOT ='/usr/local/wjproject_docker/wjproject_env/wjproject_ui/dist/static'
+STATIC_ROOT ='static'
+# STATIC_ROOT ='/usr/local/wjproject_docker/wjproject_env/wjproject_ui/dist/static'
 
 # #  配置文件路径
 # MEDIA_URL = '/media/'
