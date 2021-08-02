@@ -1,0 +1,28 @@
+# created by virtualenv automatically
+# 添加Django忽略文件
+.idea
+.vscode
+db.sqlite3
+wjproject_v1/__pycache__/
+
+# Distribution / packaging
+lib/
+lib64/
+logs/
+media/
+tem_data/
+# 忽略Vue项目，这个我在windows下写了
+wjproject_ui/
+
+#Django stuff:
+*.log
+local_settings.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
