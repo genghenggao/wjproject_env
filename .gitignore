@@ -6,6 +6,7 @@ db.sqlite3
 wjproject_v1/__pycache__/
 
 # Distribution / packaging
+bin/
 lib/
 lib64/
 logs/
@@ -17,6 +18,8 @@ wjproject_ui/
 #Django stuff:
 *.log
 local_settings.py
+*.pyc
+__pycache__
 
 # Environments
 .env
