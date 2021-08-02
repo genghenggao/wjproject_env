@@ -3,8 +3,9 @@
 .idea
 .vscode
 db.sqlite3
+wjproject_app/__pycache__/
+wjproject_users/__pycache__/
 wjproject_v1/__pycache__/
-
 # Distribution / packaging
 bin/
 lib/
