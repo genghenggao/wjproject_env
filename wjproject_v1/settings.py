@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-!4bbttnj60=*3qllh+9r#^kg=rk65p$2v2amhpwavlk#7)^oq+
 # ALLOWED_HOSTS = ['*', ] 	# 允许所有的IP可以访问
 
 DEBUG = False
-ALLOWED_HOSTS = ['127.0.0.1', '39.105.175.144', "www.genghenggao.top"]
+ALLOWED_HOSTS = ['127.0.0.1', '39.105.175.144', "www.genghenggao.top","genghenggao.top"]
 
 # Application definition
 
@@ -102,7 +102,7 @@ MIDDLEWARE = [
     # 设置可跨域
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware', #发送post报403
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -190,12 +190,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # Add for vuejs
-# STATICFILES_DIRS = [  # 添加静态文件路径
-#     # os.path.join(BASE_DIR, "wjproject_ui/dist"),
-#     os.path.join(BASE_DIR, "wjproject_ui/dist/static"),
-# ]
+STATICFILES_DIRS = [  # 添加静态文件路径
+    # os.path.join(BASE_DIR, "wjproject_ui/dist"),
+    os.path.join(BASE_DIR, "wjproject_ui/dist/static"),
+]
 # 设置收集静态资源的路径(部署时使用)
-STATIC_ROOT ='static' #这里已经是在虚拟环境目录下了
+# STATIC_ROOT ='static' #这里已经是在虚拟环境目录下了
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # STATIC_ROOT ='/usr/local/wjproject_docker/wjproject_env/wjproject_ui/dist/static'
 
 # #  配置文件路径

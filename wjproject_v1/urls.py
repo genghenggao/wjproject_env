@@ -4,7 +4,7 @@ version: v1.0.0
 Author: henggao
 Date: 2021-07-05 09:46:12
 LastEditors: henggao
-LastEditTime: 2021-08-01 23:14:16
+LastEditTime: 2021-08-04 10:16:19
 '''
 """wjproject_v1 URL Configuration
 
@@ -26,18 +26,13 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 from django.urls import path
-from django.urls.conf import include
+from django.urls.conf import include, re_path
 from django.views.generic import TemplateView
 import wjproject_app.urls
 import wjproject_users.urls
-from . import views
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(wjproject_app.urls)),
     path('api/', include(wjproject_users.urls)),
     path('', TemplateView.as_view(template_name="index.html")),
-    url(r'^[a-zA-Z]*', views.index)  # 将访问的所有关于vue的路径都指向index页面
-   
 ]
-

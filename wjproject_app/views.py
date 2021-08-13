@@ -7,7 +7,7 @@ version: v1.0.0
 Author: henggao
 Date: 2021-07-05 09:56:53
 LastEditors: henggao
-LastEditTime: 2021-07-26 20:55:51
+LastEditTime: 2021-08-06 17:30:59
 '''
 from django.template.defaultfilters import length
 import zipstream
@@ -191,14 +191,15 @@ class DataStoreView(APIView):
 
 class DataStoreDetailView(APIView):
     def get(self, request, *args, **kwargs):
-        # print(request.GET)
         # 判断是否含有_id,没有则随机
         if not '_id' in request.GET:
+            # if request.GET['_id'] == "no_value":
             # 空_id值
             publish_obj = DataFormModel.objects.first()
         else:
             # 有值
             query_id = request.GET['_id']
+            print(query_id)
             publish_obj = DataFormModel.objects.filter(
                 id=query_id).first()
         # # 序列化及
@@ -580,3 +581,184 @@ class BatchDownLoadDataPreView(APIView):
             'file_num': file_num
         }
         return Response(data)
+
+
+# 统计数据库信息
+class DataBaseInfoView(APIView):
+    def get(self, request, *args, **kwargs):
+        # 获取到集合
+        collection = DataFormModel._get_collection()
+        # print(collection)
+        # 获取当前数据库
+        mydb = DataFormModel._get_db()
+        # 1.获取数据库信息
+        # print(mydb.command("dbstats"))
+        dbinfo = mydb.command("dbstats")
+        # 当前mongodb所在的硬盘已经使用的空间大小
+        fsUsedSize = round((dbinfo['fsUsedSize'] / 1024 / 1024), 2)
+        # 当前mongodb所在的硬盘总共的空间大小
+        fsTotalSize = round((dbinfo['fsTotalSize'] / 1024 / 1024), 2)
+        # 当前数据库的数据大小
+        dataSize = round((dbinfo['dataSize'] / 1024 / 1024), 2)
+        data_percent = round((fsUsedSize / fsTotalSize), 2)
+
+        # 数据总览头部数据信息
+        datatop = {
+            "fsUsedSize": fsUsedSize,
+            "fsTotalSize": fsTotalSize,
+            "dataSize": dataSize,
+            'data_percent': data_percent
+        }
+        # print(datatop)
+        # 获取集合信息
+        # print(mydb.command("collstats","dataform") )
+
+        # 2.查询项目文件.这里查询上传单位
+        # test = DataFormModel.objects.sum('dataStorageCompany')
+        # pipeline = [
+        #     {"$sort": {"dataStorageCompany": -1}},
+        #     {"$project": {"_id": 0, "name": "$dataStorageCompany",}}
+        # ]
+        # data = DataFormModel.objects().aggregate(pipeline)
+        # print(data)
+        # for i in data:
+        #     print(i)
+        # 返回的是一个字典，key是字段名，value是该字段出现的次数。
+        datanum_tmp = DataFormModel.objects().item_frequencies('dataprojectname')
+        # datanum = DataFormModel.objects().item_frequencies('dataName')
+        # print(datanum_tmp)
+        # print(type(datanum_tmp))
+        datanum = []
+        cnt = 0  # mongodb数据返回已经排序好了，获取前10个
+        for data_key, data_value in datanum_tmp.items():
+            cnt += 1
+            if cnt > 10:
+                break
+            # print(data_key, data_value)
+            tmp_dic = {
+                'name': data_key,
+                'value': data_value
+            }
+            datanum.append(tmp_dic)
+
+        # 数据太多，可以考虑取前十个
+        # print(len(datanum))
+
+        # 3.最后10条数据
+        dataupload = []
+        current_obj = collection.find({}).limit(10).sort([('_id', -1)])
+        for result in current_obj:
+            query_id = result['_id']  # 获取数据的_id
+            data_name = result['dataName']  # 获项目名称
+            data_admin = result['dataAdmin']  # 上传人员
+            data_projectname = result['dataprojectname']  # 上传人员
+            # print(result)
+            # print(query_id)
+            # print(data_name)
+            # print(data_admin)
+            publish_obj = DataFormModel.objects.filter(
+                id=query_id).first()
+
+            # 获取文件信息
+            file_lenght = round((publish_obj.fileList.length / 1024 / 1024), 2)
+            # print(file_lenght)
+            file_date = publish_obj.fileList.upload_date
+
+            # print(file_date)
+            datauploadinfo = {
+                'file_date': file_date,
+                'data_admin': data_admin,
+                'data_name': data_name,
+                'file_lenght': file_lenght,
+                'data_projectname': data_projectname
+            }
+            dataupload.append(datauploadinfo)
+        # print(dataupload)
+        # # 返回结果
+        # result_serialize = DataFormSerializers(publish_obj)  # 序列化
+        # datainfo = result_serialize.data
+
+        # 4.查询文件分布信息
+        # 数据分类
+        dataNameList = ["图", '报告', '表', "柱状图", '剖面图', '平面图']
+        # 数据统计信息
+        dataview = []
+        # 数据总量
+        fileallsize = 0
+        for dataName in dataNameList:
+            search_obj = DataFormModel.objects(
+                dataName=re.compile(dataName, re.IGNORECASE),).order_by('_id')  # 一定要排序
+
+            # 统计数目
+            # print(len(search_obj))
+            # filenum = len(search_obj)
+            # print(search_obj.count())
+            filenum = search_obj.count()  # 官方说这比len(search_obj)快
+
+            # 统计数据量
+            filesize = 0
+            if filenum != 0:
+                for obj in search_obj:
+                    # print(obj.fileList.length)
+                    filesize += obj.fileList.length
+            # 类别数据统计
+            filesize = round((filesize / 1024 / 1024), 2)   # B --> KB --> MB
+            # 整个数据统计
+            fileallsize += filesize
+            # 序列化及结果返回
+            # ser = DataFormSerializers(instance=search_obj, many=True)
+            # print(ser.data)
+            # 统计数目
+            # print(len(ser.data))
+            # print(dataName + ":" + search_obj.count())
+            datainfo = {
+                'datatype': dataName,
+                'filesize': filesize,
+                "filenum": filenum,
+            }
+
+            dataview.append(datainfo)
+        # print(dataview)
+        # print(fileallsize)
+
+        # # 5. # 数据分类
+        # dataImgList = ["柱状图", '剖面图', '平面图']
+        # # 图数据统计
+        # dataimgview = []
+        # for dataImg in dataImgList:
+        #     search_obj = DataFormModel.objects(
+        #         dataName=re.compile(dataImg, re.IGNORECASE),).order_by('_id')
+
+        #     # 统计数目
+        #     # print(len(search_obj))
+        #     # imgnum = len(search_obj)
+        #     imgnum = search_obj.count()  # 官方说这比len(search_obj)快
+
+        #     # 统计数据量
+        #     imgsize = 0
+        #     if imgnum != 0:
+        #         for obj in search_obj:
+        #             # print(obj.fileList.length)
+        #             imgsize += obj.fileList.length
+        #     # 类别数据统计
+        #     imgsize = imgsize / 1024 / 1024   # B --> KB --> MB
+
+        #     dataimginfo = {
+        #         'datatype': dataImg,
+        #         'imgsize': imgsize,
+        #         "imgnum": imgnum,
+        #     }
+        #     dataimgview.append(dataimginfo)
+        # # print(dataimgview)
+
+        # 统计信息
+        res_data = {
+            'datatop': datatop,
+            'datanum': datanum,
+            'dataupload': dataupload,
+            'dataview': dataview,
+        }
+
+        # print(res_data)
+
+        return Response(res_data)

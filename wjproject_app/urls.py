@@ -4,7 +4,7 @@ version: v1.0.0
 Author: henggao
 Date: 2021-07-06 16:34:50
 LastEditors: henggao
-LastEditTime: 2021-07-25 17:28:44
+LastEditTime: 2021-08-04 10:29:58
 '''
 from wjproject_v1.settings import BASE_DIR
 from django.urls import path
@@ -38,6 +38,6 @@ urlpatterns = [
     path('wjproject/batchdownloadpreview/', BatchDownLoadDataPreView.as_view(),
          name='batchdownloadpreview'),  # 批量下载预览
     re_path(r'^wjproject/media/(?P<path>.*)$', serve,
-            {'document_root': os.path.join(BASE_DIR, 'media')}) #服务器资源
-
+            {'document_root': os.path.join(BASE_DIR, 'media')}), #服务器资源
+     path('wjproject/databaseinfo/',DataBaseInfoView.as_view(),name='databaseinfo') # 数据库统计信息
 ]

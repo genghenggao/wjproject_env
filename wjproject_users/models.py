@@ -4,7 +4,7 @@ version: v1.0.0
 Author: henggao
 Date: 2021-07-26 20:54:08
 LastEditors: henggao
-LastEditTime: 2021-07-30 21:41:17
+LastEditTime: 2021-08-09 22:21:10
 '''
 from django.db.models.fields import CharField
 from djongo import models
@@ -41,3 +41,5 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+
