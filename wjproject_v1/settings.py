@@ -29,7 +29,8 @@ SECRET_KEY = 'django-insecure-!4bbttnj60=*3qllh+9r#^kg=rk65p$2v2amhpwavlk#7)^oq+
 # ALLOWED_HOSTS = ['*', ] 	# 允许所有的IP可以访问
 
 DEBUG = False
-ALLOWED_HOSTS = ['127.0.0.1', '39.105.175.144', "www.genghenggao.top","genghenggao.top"]
+ALLOWED_HOSTS = ['127.0.0.1', '39.105.175.144',
+                 "www.genghenggao.top", "genghenggao.top"]
 
 # Application definition
 
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
 
     # myapp
     'corsheaders',
+    'channels',
     'rest_framework',
     'rest_framework_mongoengine',
     'rest_framework.authtoken',
@@ -100,9 +102,9 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # 设置可跨域
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',# 注册组件cors
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware', #发送post报403
+    'django.middleware.csrf.CsrfViewMiddleware',  # 发送post报403
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -110,6 +112,31 @@ MIDDLEWARE = [
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
+# WEBSOCKET_ACCEPT_ALL = True  # 可以允许每一个单独的视图实用websockets
+CORS_ALLOW_METHODS = (
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'VIEW',
+)
+
+CORS_ALLOW_HEADERS = (
+    'XMLHttpRequest',
+    'X_FILENAME',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'Pragma',
+)
+
+# 指定ASGI的路由地址
+ASGI_APPLICATION = 'wjproject_v1.asgi.application'
 
 
 ROOT_URLCONF = 'wjproject_v1.urls'

@@ -7,8 +7,10 @@ version: v1.0.0
 Author: henggao
 Date: 2021-07-05 09:56:53
 LastEditors: henggao
-LastEditTime: 2021-08-06 17:30:59
+LastEditTime: 2021-08-20 16:55:37
 '''
+from channels.generic.websocket import WebsocketConsumer
+import xlrd
 from django.template.defaultfilters import length
 import zipstream
 import zipfile
@@ -185,6 +187,188 @@ class DataStoreView(APIView):
             write_data.save()
         # =====================================================
         return HttpResponse('success')
+
+
+# 批量上传
+class BulkDataStoreView(APIView):
+    def get(self, request, *args, **kwargs):
+        # print(request)
+        return Response('get success')
+
+    def post(self, request, *args, **kwargs):
+        # print(request.data)
+        # for i in range(1, 5):
+        #     time.sleep(1)  # 休眠1秒
+        #     print(i)
+        #     data = {
+        #         'dataNum': i
+        #     }
+
+        fileio = request.FILES.get("file", None)  # 注意比较
+        # print(fileio)
+        # 1. 保存到服务器
+        if not os.path.exists('tem_data/'):
+            os.mkdir('tem_data/')
+        with open("./tem_data/%s" % fileio.name, 'wb+') as f:
+            for chunk in fileio.chunks():
+                f.write(chunk)
+            f.close()
+
+        # # 2. 解压zip文件
+        zfile = zipfile.ZipFile("./tem_data/%s" % fileio.name)
+        # print(zfile)
+        for filename in zfile.namelist():
+            data = zfile.read(filename)
+            # print(filename.encode('utf-8'))
+            # 解决中文命名乱码
+            try:
+                filename = filename.encode('cp437').decode('gbk')
+            except:
+                filename = filename.encode('utf-8').decode('utf-8')
+            # print(filename)
+
+            # print(data)
+            # 解压，写入服务器
+            f = open(os.path.join("./tem_data/", filename), 'wb+')
+            f.write(data)
+            f.close()
+
+        # return Response(data)
+        return Response("post success")
+
+
+# websocket，监听上传完成信息，发送给浏览器实时监听
+
+
+class BulkDataWebsocket(WebsocketConsumer):
+    def connect(self):
+        self.accept()
+
+    def disconnect(self, close_code):
+        pass
+
+    def receive(self, text_data):
+        """
+        接收消息
+        :param text_data: 客户端发送的消息
+        :return:
+        """
+        print(text_data)
+
+        # 3. 数据写入数据库
+        # 读取excel，打开文件
+        wb = xlrd.open_workbook("./tem_data/上传文件信息.xlsx")
+        # wb = xlrd.open_workbook("./tem_data/datainfo.xlsx")
+        # 根据 sheet 索引获取内容
+        sh1 = wb.sheet_by_index(0)
+        # print(sh1.nrows)#有效数据行数
+        # print(sh1.ncols)#有效数据列数
+        # print(sh1.cell(0,0).value)#输出第一行第一列的值
+        # 将数据和标题组合成字典
+        # print(dict(zip(sh1.row_values(0), sh1.row_values(2))))
+        # 遍历excel，打印所有数据
+        for i in range(1, sh1.nrows):
+            print(sh1.row_values(i))
+            datainfo = sh1.row_values(i)
+            #  获取上传字段信息
+            dataName = datainfo[0]
+            dataFormat = datainfo[1]
+            dataNumber = datainfo[2]
+            dataprojectname = datainfo[3]
+
+            dataCompany = datainfo[4]
+            dataMaker = datainfo[5]
+            dataMaker2 = datainfo[6]
+            dataMaker3 = datainfo[7]
+            dataScale = datainfo[8]
+            dataDate = datainfo[9]
+            dataCoordinate = datainfo[10]
+            dataAdmin = datainfo[11]
+            dataReview = datainfo[12]
+            dataStorageCompany = datainfo[13]
+            dataStorageLocation = datainfo[14]
+            dataKeyWord1 = datainfo[15]
+            dataKeyWord2 = datainfo[16]
+            dataKeyWord3 = datainfo[17]
+            dataLeftX = datainfo[18]
+            dataLeftY = datainfo[19]
+            dataRightX = datainfo[20]
+            dataRightY = datainfo[21]
+            dataIntro = datainfo[22]
+  
+            # 字段信息
+            write_data = DataFormModel(
+                dataName=dataName,
+                dataNumber=dataNumber,
+                dataFormat=dataFormat,
+                dataCompany=dataCompany,
+                dataMaker=dataMaker,
+                dataMaker2=dataMaker2,
+                dataMaker3=dataMaker3,
+                dataDate=dataDate,
+                dataScale=dataScale,
+                dataCoordinate=dataCoordinate,
+                dataAdmin=dataAdmin,
+                dataReview=dataReview,
+                dataStorageCompany=dataStorageCompany,
+                dataStorageLocation=dataStorageLocation,
+                dataKeyWord1=dataKeyWord1,
+                dataKeyWord2=dataKeyWord2,
+                dataKeyWord3=dataKeyWord3,
+                dataprojectname=dataprojectname,
+                dataLeftX=dataLeftX,
+                dataLeftY=dataLeftY,
+                dataRightX=dataRightX,
+                dataRightY=dataRightY,
+                # dataLeftX=float(datainfo['dataLeftX']),
+                # dataLeftY=float(datainfo['dataLeftY']),
+                # dataRightX=float(datainfo['dataRightX']),
+                # dataRightY=float(datainfo['dataRightY']),
+                dataIntro=dataIntro,
+            )
+            aliases_name = datainfo[0]  # 别名，文件名
+
+            carouselImgName = datainfo[23]
+            fileListName = datainfo[24]
+            # 数据写入数据库
+            with open("./tem_data/%s" % fileListName, 'rb') as fs, open("./tem_data/%s" % carouselImgName, 'rb') as fd:
+                # 写入GridFS
+                # 1.源件
+                write_data.fileList.put(
+                    fs, content_type=fileListName.split(".")[1], filename=fileListName, aliases=[aliases_name])
+                # 附属图
+                write_data.imgList.put(
+                    fd, content_type=carouselImgName.split(".")[1], filename=carouselImgName, aliases=[aliases_name])
+
+            write_data.save()
+
+            # 发送和信息给浏览器
+            # dataRes =  dict(zip(sh1.row_values(0), sh1.row_values(i)))
+            dataRes =  json.dumps(dict(zip(sh1.row_values(0), sh1.row_values(i))))
+            self.send(dataRes)
+
+        # 获取整行或整列的值
+        # rows = sh1.row_values(0)  # 获取第一行内容
+        # cols = sh1.col_values(1)  # 获取第二列内容
+        # print(rows)
+        # # 打印获取的行列值
+        # print("第一行的值为:", rows)
+        # print("第二列的值为:", cols)
+
+        # 写进数据库
+        # with open("./tem_data/%s" % fileio.name, 'wb+') as f:
+        #     for chunk in fileio.chunks():
+        #         f.write(chunk)
+        #     f.close()
+        # poetryList = [
+        #     "云想衣裳花想容",
+        #     "春风拂槛露华浓",
+        #     "若非群玉山头见",
+        #     "会向瑶台月下逢",
+        # ]
+        # for i in poetryList:
+        #     time.sleep(0.5)
+        #     self.send(i)
 
 # 增、删、改、查
 

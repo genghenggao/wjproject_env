@@ -4,7 +4,7 @@ version: v1.0.0
 Author: henggao
 Date: 2021-07-05 09:46:12
 LastEditors: henggao
-LastEditTime: 2021-08-04 10:16:19
+LastEditTime: 2021-08-19 23:18:23
 '''
 """wjproject_v1 URL Configuration
 
@@ -21,7 +21,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-
 
 from django.conf.urls import url
 from django.contrib import admin
