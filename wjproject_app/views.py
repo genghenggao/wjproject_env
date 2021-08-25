@@ -7,7 +7,7 @@ version: v1.0.0
 Author: henggao
 Date: 2021-07-05 09:56:53
 LastEditors: henggao
-LastEditTime: 2021-08-20 16:55:37
+LastEditTime: 2021-08-24 15:53:12
 '''
 from channels.generic.websocket import WebsocketConsumer
 import xlrd
@@ -233,8 +233,112 @@ class BulkDataStoreView(APIView):
             f.write(data)
             f.close()
 
-        # return Response(data)
-        return Response("post success")
+        # 3.数据写入服务器
+        # 读取excel，打开文件
+        path = "./tem_data/上传文件信息.xlsx"
+        if os.path.exists(path):  # 如果文件存在
+            wb = xlrd.open_workbook("./tem_data/上传文件信息.xlsx")
+            # wb = xlrd.open_workbook("./tem_data/datainfo.xlsx")
+            # 根据 sheet 索引获取内容
+            sh1 = wb.sheet_by_index(0)
+            # print(sh1.nrows)#有效数据行数
+            # print(sh1.ncols)#有效数据列数
+            # print(sh1.cell(0,0).value)#输出第一行第一列的值
+            # 将数据和标题组合成字典
+            # print(dict(zip(sh1.row_values(0), sh1.row_values(2))))
+            dataResList = []
+            # 遍历excel，打印所有数据
+            for i in range(1, sh1.nrows):
+                # print(sh1.row_values(i))
+                datainfo = sh1.row_values(i)
+                #  获取上传字段信息
+                dataName = datainfo[0]
+                dataFormat = datainfo[1]
+                dataNumber = datainfo[2]
+                dataprojectname = datainfo[3]
+
+                dataCompany = datainfo[4]
+                dataMaker = datainfo[5]
+                dataMaker2 = datainfo[6]
+                dataMaker3 = datainfo[7]
+                dataScale = datainfo[8]
+                dataDate = datainfo[9]
+                dataCoordinate = datainfo[10]
+                dataAdmin = datainfo[11]
+                dataReview = datainfo[12]
+                dataStorageCompany = datainfo[13]
+                dataStorageLocation = datainfo[14]
+                dataKeyWord1 = datainfo[15]
+                dataKeyWord2 = datainfo[16]
+                dataKeyWord3 = datainfo[17]
+                dataLeftX = datainfo[18]
+                dataLeftY = datainfo[19]
+                dataRightX = datainfo[20]
+                dataRightY = datainfo[21]
+                dataIntro = datainfo[22]
+
+                # 字段信息
+                write_data = DataFormModel(
+                    dataName=dataName,
+                    dataNumber=dataNumber,
+                    dataFormat=dataFormat,
+                    dataCompany=dataCompany,
+                    dataMaker=dataMaker,
+                    dataMaker2=dataMaker2,
+                    dataMaker3=dataMaker3,
+                    dataDate=dataDate,
+                    dataScale=dataScale,
+                    dataCoordinate=dataCoordinate,
+                    dataAdmin=dataAdmin,
+                    dataReview=dataReview,
+                    dataStorageCompany=dataStorageCompany,
+                    dataStorageLocation=dataStorageLocation,
+                    dataKeyWord1=dataKeyWord1,
+                    dataKeyWord2=dataKeyWord2,
+                    dataKeyWord3=dataKeyWord3,
+                    dataprojectname=dataprojectname,
+                    dataLeftX=dataLeftX,
+                    dataLeftY=dataLeftY,
+                    dataRightX=dataRightX,
+                    dataRightY=dataRightY,
+                    dataIntro=dataIntro,
+                )
+                aliases_name = datainfo[0]  # 别名，文件名
+
+                carouselImgName = datainfo[23]
+                fileListName = datainfo[24]
+
+                # 判断附属图和附属文件是否存在
+                if os.path.exists("./tem_data/%s" % fileListName) and os.path.exists("./tem_data/%s" % carouselImgName):  # 如果文件存在
+                    # 数据写入数据库
+                    with open("./tem_data/%s" % fileListName, 'rb') as fs, open("./tem_data/%s" % carouselImgName, 'rb') as fd:
+                        # 写入GridFS
+                        # 1.源件
+                        write_data.fileList.put(
+                            fs, content_type=fileListName.split(".")[1], filename=fileListName, aliases=[aliases_name])
+                        # 附属图
+                        write_data.imgList.put(
+                            fd, content_type=carouselImgName.split(".")[1], filename=carouselImgName, aliases=[aliases_name])
+
+                    write_data.save()
+                    # 统计成功信息
+                    data_json = dict(zip(sh1.row_values(0), sh1.row_values(i)))
+                    # print(dataRes)
+                    dataResList.append(data_json)
+                    dataBack = {
+                        'res': 200,
+                        'data': dataResList
+                    }
+                else:
+                    dataBack = {'res': 500}
+            print(dataResList)
+            # 上传成功后，删除上传文件
+            os.remove("./tem_data/上传文件信息.xlsx")
+
+        else:
+            dataBack = {'res': 400}
+        return Response(dataBack)
+        # return Response("post success")
 
 
 # websocket，监听上传完成信息，发送给浏览器实时监听
@@ -295,7 +399,7 @@ class BulkDataWebsocket(WebsocketConsumer):
             dataRightX = datainfo[20]
             dataRightY = datainfo[21]
             dataIntro = datainfo[22]
-  
+
             # 字段信息
             write_data = DataFormModel(
                 dataName=dataName,
@@ -344,7 +448,8 @@ class BulkDataWebsocket(WebsocketConsumer):
 
             # 发送和信息给浏览器
             # dataRes =  dict(zip(sh1.row_values(0), sh1.row_values(i)))
-            dataRes =  json.dumps(dict(zip(sh1.row_values(0), sh1.row_values(i))))
+            dataRes = json.dumps(
+                dict(zip(sh1.row_values(0), sh1.row_values(i))))
             self.send(dataRes)
 
         # 获取整行或整列的值

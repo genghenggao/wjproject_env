@@ -4,7 +4,7 @@ version: v1.0.0
 Author: henggao
 Date: 2021-07-05 09:46:12
 LastEditors: henggao
-LastEditTime: 2021-08-19 23:00:16
+LastEditTime: 2021-08-24 14:22:02
 '''
 """
 ASGI config for wjproject_v1 project.
